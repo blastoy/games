@@ -2,10 +2,10 @@ var MARGINS = { GOOD: 20, PERFECT: 10 }
 var SCORES = { GOOD: 1, PERFECT: 2 }
 var SPEEDS = { NORMAL: 2, FAST: 4 }
 
-var gameWidth = 800
-var gameHeight = 600
+var gameWidth = 900
+var gameHeight = 900
 
-var cursors, up, down, left, right, player, scoreText, statusText
+var cursors, up, down, left, right, boss1, scoreText, statusText
 
 var score = 0
 var perfectCounter = 1
@@ -73,6 +73,8 @@ function preload() {
   this.load.spritesheet('left-eat', 'assets/images/left-eat.png', { frameWidth: 32, frameHeight: 32 })
   this.load.spritesheet('right-eat', 'assets/images/right-eat.png', { frameWidth: 32, frameHeight: 32 })
 
+  this.load.spritesheet('boss1', 'assets/images/boss1.png', { frameWidth: 50, frameHeight: 32 })
+
   updateNotes = updateNotes.bind(this)
   updateCursors = updateCursors.bind(this)
   onNoteConsume = onNoteConsume.bind(this)
@@ -82,14 +84,12 @@ function preload() {
 }
 
 function create() {
-  player = this.add.group()
-
   up = this.add.sprite(gameWidth/2, (gameHeight/2) - 50, 'up').setScale(2)
   down = this.add.sprite(gameWidth/2, (gameHeight/2) + 50, 'down').setScale(2)
   left = this.add.sprite((gameWidth/2) - 50, gameHeight/2, 'left').setScale(2)
   right = this.add.sprite((gameWidth/2) + 50, gameHeight/2, 'right').setScale(2)
 
-  player.addMultiple([up, down, left, right])
+  boss1 = this.add.sprite(100, 100, 'boss1').setScale(3)
 
   cursors = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE')
 
@@ -131,7 +131,7 @@ function updateNotes () {
         onUpdate: onNoteUpdate
       })
       break
-      
+
     case 'LEFT':
       this.tweens.add({
         targets: this.add.sprite(-32, gameHeight/2, 'left').setScale(2),
@@ -161,20 +161,20 @@ function updateNotes () {
 function updateCursors () {
   if (cursors.UP.isDown) up.setTexture('up-eat')
   else up.setTexture('up')
-    
+
   if (cursors.DOWN.isDown) down.setTexture('down-eat')
   else down.setTexture('down')
-    
+
   if (cursors.LEFT.isDown) left.setTexture('left-eat')
   else left.setTexture('left')
 
   if (cursors.RIGHT.isDown) right.setTexture('right-eat')
   else right.setTexture('right')
-    
-  if (cursors.W.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.y -= speed })
-  if (cursors.A.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.x -= speed })
-  if (cursors.S.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.y += speed })
-  if (cursors.D.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.x += speed })
+
+  // if (cursors.W.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.y -= speed })
+  // if (cursors.A.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.x -= speed })
+  // if (cursors.S.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.y += speed })
+  // if (cursors.D.isDown) Phaser.Actions.Call(player.getChildren(), function(n) { n.x += speed })
 
   speed = cursors.SPACE.isDown ? SPEEDS.FAST : SPEEDS.NORMAL
 }
@@ -182,13 +182,13 @@ function updateCursors () {
 function onNoteUpdate (tween, sprite) {
   var shouldEatNote = false
   var delta = Math.INFINITY
-  
+
   switch (sprite.texture.key) {
-    case 'up': 
+    case 'up':
       delta = Math.abs(sprite.y - (tween.data[1].end - MARGINS.GOOD))
       shouldEatNote = (delta < MARGINS.GOOD) && cursors.UP.isDown && sprite.active
       break
-      
+
     case 'down':
       delta = Math.abs(sprite.y - (tween.data[1].end + MARGINS.GOOD))
       shouldEatNote = (delta < MARGINS.GOOD) && cursors.DOWN.isDown && sprite.active
@@ -198,7 +198,7 @@ function onNoteUpdate (tween, sprite) {
       delta = Math.abs(sprite.x - (tween.data[0].end - MARGINS.GOOD))
       shouldEatNote = (delta < MARGINS.GOOD) && cursors.LEFT.isDown && sprite.active
       break
-      
+
     case 'right':
       delta = Math.abs(sprite.x - (tween.data[0].end + MARGINS.GOOD))
       shouldEatNote = (delta < MARGINS.GOOD) && cursors.RIGHT.isDown && sprite.active
@@ -208,7 +208,7 @@ function onNoteUpdate (tween, sprite) {
   var scoreType = delta < MARGINS.PERFECT ? SCORES.PERFECT : SCORES.GOOD
 
   if (shouldEatNote) {
-    // performNoteAttack(sprite, scoreType)
+    onNoteAttack(sprite, scoreType)
     onNoteConsume(tween, sprite, scoreType)
   }
 }
@@ -229,46 +229,46 @@ function onNoteFail (tween, sprites) {
   })
 }
 
-function onNoteAttack (tween, sprite, scoreType) {
+function onNoteAttack (sprite, scoreType) {
   var graphic, shape
 
-  // switch (sprite.texture.key) {
-  //   case 'up':
-  //     shape = new Phaser.Geom.Rectangle(gameWidth/2 - 32, 0, 64, gameHeight/2)
-  //     graphic = this.add.graphics({ fillStyle: { color: 0xff0000, alpha: 0.5 } })
-  //     break
+  switch (sprite.texture.key) {
+    case 'up':
+      shape = new Phaser.Geom.Rectangle(gameWidth/2 - 32, 0, 64, gameHeight/2)
+      graphic = this.add.graphics({ fillStyle: { color: 0xff0000, alpha: 0.5 } })
+      break
 
-  //   case 'down':
-  //     shape = new Phaser.Geom.Rectangle(gameWidth/2 - 32, gameHeight/2, 64, gameHeight/2)
-  //     graphic = this.add.graphics({ fillStyle: { color: 0x0000ff, alpha: 0.5 } })
-  //     break
+    case 'down':
+      shape = new Phaser.Geom.Rectangle(gameWidth/2 - 32, gameHeight/2, 64, gameHeight/2)
+      graphic = this.add.graphics({ fillStyle: { color: 0x0000ff, alpha: 0.5 } })
+      break
 
-  //   case 'left':
-  //     shape = new Phaser.Geom.Rectangle(0, gameHeight/2 - 32, gameWidth/2, 64)
-  //     graphic = this.add.graphics({ fillStyle: { color: 0x00ff00, alpha: 0.5 } })
-  //     break
+    case 'left':
+      shape = new Phaser.Geom.Rectangle(0, gameHeight/2 - 32, gameWidth/2, 64)
+      graphic = this.add.graphics({ fillStyle: { color: 0x00ff00, alpha: 0.5 } })
+      break
 
-  //   case 'right':
-  //     shape = new Phaser.Geom.Rectangle(gameWidth/2, gameHeight/2 - 32, gameWidth/2, 64)
-  //     graphic = this.add.graphics({ fillStyle: { color: 0xff00ff, alpha: 0.5 } })
-  //     break
-  // }
+    case 'right':
+      shape = new Phaser.Geom.Rectangle(gameWidth/2, gameHeight/2 - 32, gameWidth/2, 64)
+      graphic = this.add.graphics({ fillStyle: { color: 0xff00ff, alpha: 0.5 } })
+      break
+  }
 
-  // graphic.fillRectShape(shape)
+  graphic.fillRectShape(shape)
 
-  // this.tweens.add({
-  //   targets: graphic,
-  //   alpha: 0,
-  //   duration: 200,
-  //   onComplete: function (tween, graphics) {
-  //     graphics[0].destroy()
-  //   }
-  // })
+  this.tweens.add({
+    targets: graphic,
+    alpha: 0,
+    duration: 200,
+    onComplete: function (tween, graphics) {
+      graphics[0].destroy()
+    }
+  })
 }
 
 function onNoteConsume (tween, sprite, scoreType) {
   switch (scoreType) {
-    case SCORES.PERFECT: 
+    case SCORES.PERFECT:
       score += (25 * perfectCounter)
       scoreText.setText('Score: ' + score + ' (x' + perfectCounter + ')')
       perfectCounter++
@@ -277,7 +277,7 @@ function onNoteConsume (tween, sprite, scoreType) {
       statusText.alpha = 0
       statusText.x = targetX - 30
       statusText.setText('PERFECT!!')
-      
+
       this.tweens.add({
         targets: statusText,
         x: targetX,
